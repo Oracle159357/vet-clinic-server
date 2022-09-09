@@ -2,10 +2,15 @@ import db from './db.js';
 
 // eslint-disable-next-line no-unused-vars
 export const selectPeople = async (options) => {
-  const results = await db.query('SELECT * FROM public.people');
+  const query = 'SELECT * FROM public.people';
+  const allPeople = await db.query(query);
+  const { paging } = options;
+  const itemsPerPage = paging.size;
+  const offset = paging.page * itemsPerPage;
+  const results = await db.query(`${query} LIMIT $1 OFFSET $2`, [itemsPerPage, offset]);
   const formattedData = {
     resultData: results.rows,
-    dataLength: results.rowCount,
+    dataLength: allPeople.rowCount,
   };
   return formattedData;
 };
