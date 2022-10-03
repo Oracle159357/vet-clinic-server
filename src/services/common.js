@@ -8,6 +8,7 @@ export const baseTypeOfColumn = {
   birthDate: 'date',
   dogName: 'string',
   height: 'number',
+  weight: 'number',
   'owner.name': 'string',
 };
 
