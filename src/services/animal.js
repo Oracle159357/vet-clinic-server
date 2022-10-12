@@ -1,53 +1,42 @@
-import { faker } from '@faker-js/faker';
+import keyBy from 'lodash.keyby';
 import CustomError from '../errors/custom-error.js';
-import { allAnimals, allPeople } from '../db/mock-data.js';
-import {
-  process,
-  deleteFromDataByIdsTableV2,
-  calculateAge,
-} from './common.js';
+import * as animalDb from '../db/animal.js';
+import * as peopleService from './people.js';
 
-export async function getAnimals(options) {
-  return process(allAnimals, options || {});
-}
+export const getAnimals = (options) => animalDb.selectAnimals(options);
 
-export async function addAnimal(data) {
-  const findDuplicateName = allAnimals.findIndex((animal) => animal.dogName === data.dogName);
-  if (findDuplicateName >= 0) {
+export const getAnimalsWithOwners = async (options) => {
+  const { resultData, dataLength } = await animalDb.selectAnimals(options);
+
+  const ownersIds = resultData.map((animal) => animal.ownerId);
+  const owners = await peopleService.getPeopleByIds(ownersIds);
+  const ownersById = keyBy(owners, 'id');
+
+  const animalsWithOwners = resultData.map(
+    (animal) => ({ ...animal, owner: ownersById[animal.ownerId] }),
+  );
+
+  return { dataLength, resultData: animalsWithOwners };
+};
+
+export const addAnimal = async (animal) => {
+  if (await animalDb.existsByDogName(animal.dogName)) {
     throw new CustomError({
       dogName: 'This name already exists',
     });
   }
-  const peopleByOwner = allPeople.find((people) => people.id === data.ownerId);
-  const newData = {
-    idKey: faker.datatype.uuid(),
-    dogName: data.dogName,
-    age: calculateAge(new Date(data.date)),
-    height: data.height,
-    birthDate: new Date(data.date),
-    owner: peopleByOwner,
-  };
-  allAnimals.push(newData);
-  return newData.idKey;
-}
 
-export async function changeAnimal(changedData) {
-  const peopleByOwner = allPeople.find((people) => people.id === changedData.ownerId);
-  const newData = {
-    idKey: changedData.idKey,
-    dogName: changedData.dogName,
-    age: calculateAge(new Date(changedData.date)),
-    height: changedData.height,
-    birthDate: new Date(changedData.date),
-    owner: peopleByOwner,
-  };
-  const findIndexElement = allAnimals
-    .findIndex((animal) => animal.idKey === changedData.idKey);
-  // eslint-disable-next-line no-param-reassign
-  allAnimals[findIndexElement] = newData;
-  return changedData.idKey;
-}
+  return animalDb.insertAnimal(animal);
+};
 
-export async function deleteAnimal(ids) {
-  return deleteFromDataByIdsTableV2(allAnimals, ids, 'idKey');
-}
+export const changeAnimal = async (changedAnimal) => {
+  if (await animalDb.existsByDogName(changedAnimal.dogName)) {
+    throw new CustomError({
+      dogName: 'This name already exists',
+    });
+  }
+
+  return animalDb.updateAnimal(changedAnimal);
+};
+
+export const removeAnimals = (ids) => animalDb.deleteAnimals(ids);

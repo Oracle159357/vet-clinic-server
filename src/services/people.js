@@ -1,5 +1,6 @@
 import * as peopleDb from '../db/people.js';
 import CustomError from '../errors/custom-error.js';
+import { selectPeopleByIds } from "../db/people.js";
 
 export const getPeoples = (options) => peopleDb.selectPeople(options);
 
@@ -22,5 +23,7 @@ export const changePerson = async (changedPerson) => {
 
   return peopleDb.updatePerson(changedPerson);
 };
+
+export const getPeopleByIds = (ids) => peopleDb.selectPeopleByIds(ids);
 
 export const removePeople = (ids) => peopleDb.deletePeople(ids);
