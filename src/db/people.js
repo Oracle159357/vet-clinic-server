@@ -1,16 +1,13 @@
 import named from 'yesql';
 import db from './db.js';
-import { createFilteringCondition, createPagingCondition, createSortingCondition } from './common.js';
+import {
+  createFilteringCondition,
+  createFromCondition,
+  createPagingCondition, createQuoteNestedIdent,
+  createSortingCondition, extractIdsFromOptions, transformOptionsIds
+} from './common.js';
 
 const namedQuery = named.pg;
-
-const baseTypeOfColumn = {
-  name: 'string',
-  age: 'number',
-  married: 'boolean',
-  birthDate: 'date',
-  weight: 'number',
-};
 
 export const existsByName = async (peopleName) => {
   const countQueryResult = await db.query('SELECT count(*) FROM public.people WHERE name=$1', [peopleName]);
@@ -25,26 +22,43 @@ export const selectPeopleByIds = async (peopleIds) => {
 };
 
 export const selectPeople = async (options = {}) => {
-  const countQueryResult = await db.query('SELECT count(*) FROM public.people ');
-  const dataLength = countQueryResult.rows[0].count;
+  const baseTable = 'people';
 
-  const { paging, sorting, filters } = options;
+  const {
+    fromPart,
+    transformedIds,
+  } = createFromCondition(extractIdsFromOptions(options), baseTable);
+
+  const {
+    sorting,
+    filters,
+    paging,
+  } = transformOptionsIds(transformedIds, options);
+
   const { pagingCondition, pagingVariables } = createPagingCondition(paging);
   const { sortingCondition } = createSortingCondition(sorting);
   const { filteringCondition, filteringVariables } = createFilteringCondition(
-    baseTypeOfColumn,
+    baseTable,
     filters,
   );
 
-  const results = await db.query(
+  const queryResult = await db.query(
     namedQuery(
-      `SELECT *
-       FROM public.people ${filteringCondition || ''} ${sortingCondition || ''} ${pagingCondition || ''}`,
+      `SELECT public.${createQuoteNestedIdent(baseTable)}.*
+       ${fromPart || ''} ${filteringCondition || ''} ${sortingCondition || ''} ${pagingCondition || ''}`,
     )({ ...filteringVariables, ...pagingVariables }),
   );
 
+  const countQueryResult = await db.query(
+    namedQuery(
+      `SELECT count(*)::int ${fromPart || ''} ${filteringCondition || ''} `,
+    )({ ...filteringVariables }),
+  );
+
+  const dataLength = countQueryResult.rows[0].count;
+
   const formattedData = {
-    resultData: results.rows,
+    resultData: queryResult.rows,
     dataLength,
   };
 
@@ -63,6 +77,7 @@ export const insertPerson = async (
     'INSERT INTO public.people(name, weight, married, "birthDate") VALUES ($1, $2, $3, $4) RETURNING *',
     [name, weight, married, birthDate],
   );
+
   return results.rows[0].id;
 };
 
@@ -79,6 +94,7 @@ export const updatePerson = async (
     'UPDATE public.people SET name = $1, weight = $2, married = $3, "birthDate" = $4 WHERE id = $5',
     [name, weight, married, birthDate, id],
   );
+
   return id;
 };
 
@@ -87,5 +103,6 @@ export const deletePeople = async (ids) => {
     'DELETE FROM public.people WHERE id = ANY($1::bigint[])',
     [ids],
   );
+
   return ids;
 };

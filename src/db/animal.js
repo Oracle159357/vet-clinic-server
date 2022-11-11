@@ -1,16 +1,13 @@
 import named from 'yesql';
 import db from './db.js';
-import { createFilteringCondition, createPagingCondition, createSortingCondition } from './common.js';
+import {
+  createFilteringCondition,
+  createFromCondition,
+  createPagingCondition, createQuoteNestedIdent,
+  createSortingCondition, extractIdsFromOptions, transformOptionsIds,
+} from './common.js';
 
 const namedQuery = named.pg;
-
-const baseTypeOfColumn = {
-  dogName: 'string',
-  age: 'number',
-  birthDate: 'date',
-  height: 'number',
-  ownerId: 'string', // HZ
-};
 
 export const existsByDogName = async (animalDogName) => {
   const countQueryResult = await db.query('SELECT count(*) FROM public.animal WHERE "dogName" = $1', [animalDogName]);
@@ -19,26 +16,43 @@ export const existsByDogName = async (animalDogName) => {
 };
 
 export const selectAnimals = async (options = {}) => {
-  const countQueryResult = await db.query('SELECT count(*) FROM public.animal ');
-  const dataLength = countQueryResult.rows[0].count;
+  const baseTable = 'animal';
 
-  const { paging } = options;
+  const {
+    fromPart,
+    transformedIds,
+  } = createFromCondition(extractIdsFromOptions(options), baseTable);
+
+  const {
+    sorting,
+    filters,
+    paging,
+  } = transformOptionsIds(transformedIds, options);
+
   const { pagingCondition, pagingVariables } = createPagingCondition(paging);
-  const { sortingCondition } = createSortingCondition(undefined);
+  const { sortingCondition } = createSortingCondition(sorting);
   const { filteringCondition, filteringVariables } = createFilteringCondition(
-    baseTypeOfColumn,
-    undefined,
+    baseTable,
+    filters,
   );
 
-  const animalsQueryResult = await db.query(
+  const queryResult = await db.query(
     namedQuery(
-      `SELECT *
-       FROM public.animal ${filteringCondition || ''} ${sortingCondition || ''} ${pagingCondition || ''}`,
+      `SELECT public.${createQuoteNestedIdent(baseTable)}.*
+       ${fromPart || ''} ${filteringCondition || ''} ${sortingCondition || ''} ${pagingCondition || ''}`,
     )({ ...filteringVariables, ...pagingVariables }),
   );
 
+  const countQueryResult = await db.query(
+    namedQuery(
+      `SELECT count(*)::int ${fromPart || ''} ${filteringCondition || ''} `,
+    )({ ...filteringVariables }),
+  );
+
+  const dataLength = countQueryResult.rows[0].count;
+
   const formattedData = {
-    resultData: animalsQueryResult.rows,
+    resultData: queryResult.rows,
     dataLength,
   };
 
@@ -57,6 +71,7 @@ export const insertAnimal = async (
     'INSERT INTO public.animal("dogName", height, "birthDate", "ownerId") VALUES ($1, $2, $3, $4) RETURNING *',
     [dogName, height, birthDate, ownerId],
   );
+
   return results.rows[0].idKey;
 };
 
@@ -73,6 +88,7 @@ export const updateAnimal = async (
     'UPDATE public.animal SET "dogName" = $1, height = $2, "birthDate" = $3 , "ownerId" = $4 WHERE "idKey" = $5',
     [dogName, height, birthDate, ownerId, idKey],
   );
+
   return idKey;
 };
 
@@ -81,5 +97,6 @@ export const deleteAnimals = async (ids) => {
     'DELETE FROM public.animal WHERE "idKey" = ANY($1::bigint[])',
     [ids],
   );
+
   return ids;
 };
