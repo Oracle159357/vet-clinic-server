@@ -1,4 +1,5 @@
 import pgFormat from 'node-pg-format';
+import named from 'yesql';
 import { metaDataAboutTables } from './metadata.js';
 import {
   createRoot,
@@ -6,6 +7,9 @@ import {
   pushNode,
   toArray,
 } from '../utils/table-dependency-tree.js';
+import db from './db.js';
+
+const namedQuery = named.pg;
 
 export function createQuoteNestedIdent(id) {
   return id.split('.').map((partOfId) => pgFormat.quoteIdent(partOfId)).join('.');
@@ -244,4 +248,47 @@ export function transformOptionsIds(transformedIds, options) {
   }
 
   return { ...options, sorting: normalizeDataForSort, filters: normalizeDataForFilters };
+}
+
+async function countOfElementByFromAndFilter(fromPart, filteringCondition, filteringVariables) {
+
+}
+
+export async function selectDataFromTheTableByNameAndOptions(baseTable, options) {
+  const {
+    fromPart,
+    transformedIds,
+  } = createFromCondition(extractIdsFromOptions(options), baseTable);
+
+  const {
+    sorting,
+    filters,
+    paging,
+  } = transformOptionsIds(transformedIds, options);
+
+  const { pagingCondition, pagingVariables } = createPagingCondition(paging);
+  const { sortingCondition } = createSortingCondition(sorting);
+  const { filteringCondition, filteringVariables } = createFilteringCondition(
+    baseTable,
+    filters,
+  );
+
+  const queryResult = await db.query(
+    namedQuery(
+      `SELECT public.${createQuoteNestedIdent(baseTable)}.*
+       ${fromPart || ''} ${filteringCondition || ''} ${sortingCondition || ''} ${pagingCondition || ''}`,
+    )({ ...filteringVariables, ...pagingVariables }),
+  );
+
+  const countQueryResult = await db.query(
+    namedQuery(
+      `SELECT count(*)::int ${fromPart || ''} ${filteringCondition || ''} `,
+    )({ ...filteringVariables }),
+  );
+  const dataLength = countQueryResult.rows[0].count;
+
+  return {
+    resultData: queryResult.rows,
+    dataLength,
+  };
 }

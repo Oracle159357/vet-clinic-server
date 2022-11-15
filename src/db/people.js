@@ -1,13 +1,7 @@
-import named from 'yesql';
 import db from './db.js';
 import {
-  createFilteringCondition,
-  createFromCondition,
-  createPagingCondition, createQuoteNestedIdent,
-  createSortingCondition, extractIdsFromOptions, transformOptionsIds
+  selectDataFromTheTableByNameAndOptions,
 } from './common.js';
-
-const namedQuery = named.pg;
 
 export const existsByName = async (peopleName) => {
   const countQueryResult = await db.query('SELECT count(*) FROM public.people WHERE name=$1', [peopleName]);
@@ -21,49 +15,9 @@ export const selectPeopleByIds = async (peopleIds) => {
   return selectPeopleByIdsQueryResult.rows;
 };
 
-export const selectPeople = async (options = {}) => {
-  const baseTable = 'people';
-
-  const {
-    fromPart,
-    transformedIds,
-  } = createFromCondition(extractIdsFromOptions(options), baseTable);
-
-  const {
-    sorting,
-    filters,
-    paging,
-  } = transformOptionsIds(transformedIds, options);
-
-  const { pagingCondition, pagingVariables } = createPagingCondition(paging);
-  const { sortingCondition } = createSortingCondition(sorting);
-  const { filteringCondition, filteringVariables } = createFilteringCondition(
-    baseTable,
-    filters,
-  );
-
-  const queryResult = await db.query(
-    namedQuery(
-      `SELECT public.${createQuoteNestedIdent(baseTable)}.*
-       ${fromPart || ''} ${filteringCondition || ''} ${sortingCondition || ''} ${pagingCondition || ''}`,
-    )({ ...filteringVariables, ...pagingVariables }),
-  );
-
-  const countQueryResult = await db.query(
-    namedQuery(
-      `SELECT count(*)::int ${fromPart || ''} ${filteringCondition || ''} `,
-    )({ ...filteringVariables }),
-  );
-
-  const dataLength = countQueryResult.rows[0].count;
-
-  const formattedData = {
-    resultData: queryResult.rows,
-    dataLength,
-  };
-
-  return formattedData;
-};
+export const selectPeople = async (options = {}) => (
+  selectDataFromTheTableByNameAndOptions('people', options)
+);
 
 export const insertPerson = async (
   {
