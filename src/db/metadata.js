@@ -21,6 +21,15 @@ export const metaDataAboutTables = {
       weight: 'number',
     },
   },
+  user: {
+    tableId: 'id',
+    columnsTypes: {
+      username: 'string',
+      password: 'string',
+      isAdmin: 'boolean',
+      isActive: 'boolean',
+    },
+  },
 };
 
 export default metaDataAboutTables;

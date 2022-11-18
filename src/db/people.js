@@ -3,10 +3,10 @@ import {
   selectDataFromTheTableByNameAndOptions,
 } from './common.js';
 
-export const existsByName = async (peopleName) => {
-  const countQueryResult = await db.query('SELECT count(*) FROM public.people WHERE name=$1', [peopleName]);
+export const getPeoplesIdsByName = async (name) => {
+  const allPeoplesByName = await db.query('SELECT id FROM public.people WHERE name=$1', [name]);
 
-  return countQueryResult.rows[0].count > 0;
+  return allPeoplesByName.rows.map((el) => el.id);
 };
 
 export const selectPeopleByIds = async (peopleIds) => {

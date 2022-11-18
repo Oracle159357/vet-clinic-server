@@ -20,7 +20,9 @@ export const getAnimalsWithOwners = async (options) => {
 };
 
 export const addAnimal = async (animal) => {
-  if (await animalDb.existsByDogName(animal.dogName)) {
+  const allIdByName = await animalDb.getAnimalsIdsByName(animal.dogName);
+
+  if (allIdByName.length > 0) {
     throw new CustomError({
       dogName: 'This name already exists',
     });
@@ -30,7 +32,10 @@ export const addAnimal = async (animal) => {
 };
 
 export const changeAnimal = async (changedAnimal) => {
-  if (await animalDb.existsByDogName(changedAnimal.dogName)) {
+  const allIdByName = await animalDb.getAnimalsIdsByName(changedAnimal.dogName);
+  const filterAllId = allIdByName.filter((id) => id !== changedAnimal.idKey);
+
+  if (filterAllId.length > 0) {
     throw new CustomError({
       dogName: 'This name already exists',
     });

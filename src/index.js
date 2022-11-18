@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import CustomError from './errors/custom-error.js';
 import { peopleController } from './controllers/people.js';
 import { animalController } from './controllers/animal.js';
+import { userController } from './controllers/user.js';
 
 const app = express();
 const port = 3000;
@@ -14,6 +15,7 @@ app.use(bodyParser.json());
 
 app.use('/people', peopleController);
 app.use('/animal', animalController);
+app.use('/user', userController);
 
 app.get('/status', (req, res) => {
   res.send('I am up and running!');

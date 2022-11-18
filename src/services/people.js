@@ -1,11 +1,12 @@
 import * as peopleDb from '../db/people.js';
 import CustomError from '../errors/custom-error.js';
-import { selectPeopleByIds } from "../db/people.js";
 
 export const getPeoples = (options) => peopleDb.selectPeople(options);
 
 export const addPerson = async (person) => {
-  if (await peopleDb.existsByName(person.name)) {
+  const allIdByName = await peopleDb.getPeoplesIdsByName(person.name);
+
+  if (allIdByName.length > 0) {
     throw new CustomError({
       name: 'This name already exists',
     });
@@ -15,7 +16,10 @@ export const addPerson = async (person) => {
 };
 
 export const changePerson = async (changedPerson) => {
-  if (await peopleDb.existsByName(changedPerson.name)) {
+  const allIdByName = await peopleDb.getPeoplesIdsByName(changedPerson.name);
+  const filterAllId = allIdByName.filter((id) => id !== changedPerson.id);
+
+  if (filterAllId.length > 0) {
     throw new CustomError({
       name: 'This name already exists',
     });
