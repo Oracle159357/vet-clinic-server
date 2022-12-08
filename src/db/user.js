@@ -44,10 +44,17 @@ export const updateUser = async (
     isActive,
   },
 ) => {
-  await db.query(
-    'UPDATE public.user SET "username" = $1, "password" = $2, "isAdmin" = $3, "isActive" = $4 WHERE "id" = $5',
-    [username, password, isAdmin, isActive, id],
-  );
+  if (password === undefined) {
+    await db.query(
+      'UPDATE public.user SET "username" = $1, "isAdmin" = $2, "isActive" = $3 WHERE "id" = $4',
+      [username, isAdmin, isActive, id],
+    );
+  } else {
+    await db.query(
+      'UPDATE public.user SET "username" = $1, "password" = $2, "isAdmin" = $3, "isActive" = $4 WHERE "id" = $5',
+      [username, password, isAdmin, isActive, id],
+    );
+  }
 
   return id;
 };
