@@ -250,10 +250,6 @@ export function transformOptionsIds(transformedIds, options) {
   return { ...options, sorting: normalizeDataForSort, filters: normalizeDataForFilters };
 }
 
-async function countOfElementByFromAndFilter(fromPart, filteringCondition, filteringVariables) {
-
-}
-
 export async function selectDataFromTheTableByNameAndOptions(baseTable, options) {
   const {
     fromPart,

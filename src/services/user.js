@@ -1,7 +1,8 @@
 import _ from 'lodash';
+import jwt from 'jsonwebtoken';
 import * as userDb from '../db/user.js';
 import CustomError from '../errors/custom-error.js';
-import encryptPassword from '../utils/password-encryption.js';
+import { encryptPassword, comparePasswords } from '../utils/password-encryption.js';
 
 export const getUsers = async (options) => {
   const result = await userDb.selectUsers(options);
@@ -27,7 +28,7 @@ export const addUser = async (user) => {
     });
   }
 
-  if (user.password.length >= 3) {
+  if (user.password.length <= 3) {
     throw new CustomError({
       password: 'You must enter a password consisting of at least four characters',
     });
@@ -54,7 +55,7 @@ export const changeUser = async (changedUser) => {
     return userDb.updateUser(output);
   }
 
-  if (changedUser.password.length >= 3) {
+  if (changedUser.password.length <= 3) {
     throw new CustomError({
       password: 'You must enter a password consisting of at least four characters',
     });
@@ -63,6 +64,31 @@ export const changeUser = async (changedUser) => {
   const hashedPassword = await encryptPassword(changedUser.password);
 
   return userDb.updateUser({ ...changedUser, password: hashedPassword });
+};
+
+export const loginUser = async ({ username, password }) => {
+  const userByName = await userDb.getUserByName(username);
+
+  if (userByName === undefined) {
+    throw new CustomError({
+      username: 'The username may not be correct',
+      password: 'The password may not be correct',
+    });
+  }
+
+  const validatePassword = await comparePasswords(password, userByName.password);
+
+  if (!validatePassword) {
+    throw new CustomError({
+      username: 'The username may not be correct',
+      password: 'The password may not be correct',
+    });
+  }
+
+  const payload = { id: userByName.id, isAdmin: userByName.isAdmin };
+  const token = jwt.sign(payload, process.env.TOKEN_SECRET);
+
+  return { token };
 };
 
 export const deactivateUsers = (ids) => userDb.deactivateUsers(ids);

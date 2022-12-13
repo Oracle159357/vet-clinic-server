@@ -9,6 +9,12 @@ export const getUsersIdsByName = async (username) => {
   return allUsersByName.rows.map((el) => el.id);
 };
 
+export const getUserByName = async (username) => {
+  const allUsersByName = await db.query('SELECT * FROM public.user WHERE username=$1', [username]);
+
+  return allUsersByName.rows[0];
+};
+
 export const selectUserByIds = async (userIds) => {
   const selectPeopleByIdsQueryResult = await db.query('SELECT * FROM public.user WHERE "id" = ANY($1::bigint[])', [userIds]);
 

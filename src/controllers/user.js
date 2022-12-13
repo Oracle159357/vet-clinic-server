@@ -28,4 +28,10 @@ userController.post('/deactivate', asyncHandler(async (req, res) => {
   res.status(200).send(JSON.stringify(data));
 }));
 
+userController.post('/login', asyncHandler(async (req, res) => {
+  const loginAndPassword = req.body;
+  const data = await userService.loginUser(loginAndPassword);
+  res.status(200).send(JSON.stringify(data));
+}));
+
 export default userController;
