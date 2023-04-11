@@ -3,9 +3,11 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import CustomError from './errors/custom-error.js';
+import auth from './middleware/auth.js';
 import { peopleController } from './controllers/people.js';
 import { animalController } from './controllers/animal.js';
 import { userController } from './controllers/user.js';
+import { authController } from './controllers/auth.js';
 
 dotenv.config();
 const app = express();
@@ -15,9 +17,10 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.use('/people', peopleController);
-app.use('/animal', animalController);
-app.use('/user', userController);
+app.use('/auth', authController);
+app.use('/people', auth, peopleController);
+app.use('/animal', auth, animalController);
+app.use('/user', auth, userController);
 
 app.get('/status', (req, res) => {
   res.send('I am up and running!');
