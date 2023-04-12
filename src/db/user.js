@@ -15,10 +15,14 @@ export const getUserByName = async (username) => {
   return allUsersByName.rows[0];
 };
 
-export const selectUserByIds = async (userIds) => {
-  const selectPeopleByIdsQueryResult = await db.query('SELECT * FROM public.user WHERE "id" = ANY($1::bigint[])', [userIds]);
+export const selectIsActiveById = async (userId) => {
+  const selectPeopleByIdsQueryResult1 = await db.query('SELECT "isActive" FROM public.user WHERE "id" = $1', [userId]);
 
-  return selectPeopleByIdsQueryResult.rows;
+  if (selectPeopleByIdsQueryResult1.rows.length === 0) {
+    return null;
+  }
+
+  return selectPeopleByIdsQueryResult1.rows[0].isActive;
 };
 
 export const selectUsers = async (options = {}) => (

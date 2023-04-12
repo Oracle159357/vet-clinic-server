@@ -6,7 +6,7 @@ import { comparePasswords } from '../utils/password-encryption.js';
 export const loginUser = async ({ username, password }) => {
   const userByName = await userDb.getUserByName(username);
 
-  if (userByName === undefined) {
+  if (userByName === undefined || userByName.isActive === false) {
     throw new CustomError({
       username: 'The username may not be correct',
       password: 'The password may not be correct',
@@ -27,4 +27,4 @@ export const loginUser = async ({ username, password }) => {
 
   return { token };
 };
-export default loginUser;
+export const getUserIsActiveById = async (id) => userDb.selectIsActiveById(id);
