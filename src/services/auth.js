@@ -22,7 +22,7 @@ export const loginUser = async ({ username, password }) => {
     });
   }
 
-  const payload = { id: userByName.id, isAdmin: userByName.isAdmin };
+  const payload = { id: userByName.id };
   const token = jwt.sign(payload, process.env.TOKEN_SECRET);
 
   return { token };
