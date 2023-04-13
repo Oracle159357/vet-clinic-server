@@ -3,7 +3,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import CustomError from './errors/custom-error.js';
-import auth from './middleware/auth.js';
+import { auth } from './middleware/auth.js';
 import { peopleController } from './controllers/people.js';
 import { animalController } from './controllers/animal.js';
 import { userController } from './controllers/user.js';

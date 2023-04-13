@@ -28,3 +28,5 @@ export const loginUser = async ({ username, password }) => {
   return { token };
 };
 export const getUserIsActiveById = async (id) => userDb.selectIsActiveById(id);
+
+export const getUserIsAdminById = async (id) => userDb.selectIsAdminById(id);

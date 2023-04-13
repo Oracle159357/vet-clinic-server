@@ -25,6 +25,16 @@ export const selectIsActiveById = async (userId) => {
   return selectPeopleByIdsQueryResult1.rows[0].isActive;
 };
 
+export const selectIsAdminById = async (userId) => {
+  const selectPeopleByIdsQueryResult1 = await db.query('SELECT "isAdmin" FROM public.user WHERE "id" = $1', [userId]);
+
+  if (selectPeopleByIdsQueryResult1.rows.length === 0) {
+    return null;
+  }
+
+  return selectPeopleByIdsQueryResult1.rows[0].isAdmin;
+};
+
 export const selectUsers = async (options = {}) => (
   selectDataFromTheTableByNameAndOptions('user', options)
 );
