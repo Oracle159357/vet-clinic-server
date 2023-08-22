@@ -1,5 +1,5 @@
 {
-  "name": "my-table-server",
+  "name": "vet-clinic-server",
   "version": "1.0.0",
   "main": "src/index.js",
   "type": "module",
